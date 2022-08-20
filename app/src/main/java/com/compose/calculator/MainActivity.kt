@@ -3,17 +3,18 @@ package com.compose.calculator
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -49,7 +50,7 @@ fun Calculator(modifier: Modifier = Modifier){
 
 
 @Composable
-fun Screen(modifier: Modifier = Modifier,viewModel:MainViewModel = viewModel(), ){
+fun Screen(modifier: Modifier = Modifier,viewModel:MainViewModel = viewModel()){
     val recordState = viewModel.recordFlow.collectAsState()
     val currentState = viewModel.calculatingFlow.collectAsState()
     Surface(shape = RoundedCornerShape(8.dp),
@@ -60,16 +61,16 @@ fun Screen(modifier: Modifier = Modifier,viewModel:MainViewModel = viewModel(), 
         Column(horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.Bottom,
             modifier = modifier.padding(16.dp)) {
+
             for (record in recordState.value){
                 Text(text = record, fontSize = 24.sp)
             }
-            for (inputs in currentState.value){
-                if (inputs.contains("=")){
-                    val calculating = inputs.split("=")
-                    Text(text = calculating[0], fontSize = 40.sp,lineHeight = 44.sp, textAlign = TextAlign.End)
-                    Text(text = " =" + calculating[1], fontSize = 40.sp)
-                }
-            }
+
+            // the calculating one witch user is inputting
+            Text(text = currentState.value,
+                fontSize = 40.sp,
+                lineHeight = 44.sp,
+                textAlign = TextAlign.End)
 
         }
     }
@@ -78,14 +79,29 @@ fun Screen(modifier: Modifier = Modifier,viewModel:MainViewModel = viewModel(), 
 
 @Composable
 fun InputArea(modifier: Modifier = Modifier){
-    Surface(color = MaterialTheme.colorScheme.primary,
+    Surface(color = MaterialTheme.colorScheme.background,
         modifier = modifier.padding(8.dp)) {
-        Column() {
-            LineButtons(strs = arrayOf("C","⊗","%","÷"),modifier.padding(0.dp,8.dp))
-            LineButtons(strs = arrayOf("7","8","9","×"),modifier.padding(0.dp,8.dp))
-            LineButtons(strs = arrayOf("4","5","6","-"),modifier.padding(0.dp,8.dp))
-            LineButtons(strs = arrayOf("1","2","3","+"),modifier.padding(0.dp,8.dp))
-            LineButtons(strs = arrayOf("0",".","="),modifier.padding(0.dp,8.dp))
+        Column {
+            LineButtons(pairs = listOf("C" to Color.LightGray,
+                "⊗" to Color.LightGray,
+                "%" to Color.LightGray,
+                "÷" to Color.Red),modifier.padding(0.dp,4.dp))
+            LineButtons(pairs = listOf("7" to Color.DarkGray,
+                "8" to Color.DarkGray,
+                "9" to Color.DarkGray,
+                "×" to Color.Red),modifier.padding(0.dp,8.dp))
+            LineButtons(pairs = listOf("4" to Color.DarkGray,
+                "5" to Color.DarkGray,
+                "6" to Color.DarkGray,
+                "-" to Color.Red),modifier.padding(0.dp,8.dp))
+            LineButtons(pairs = listOf("1" to Color.DarkGray,
+                "2" to Color.DarkGray,
+                "3" to Color.DarkGray,
+                "+" to Color.Red),modifier.padding(0.dp,8.dp))
+            LineButtons(pairs = listOf("0" to Color.DarkGray,
+                "." to Color.DarkGray,
+                "=" to Color.White)
+                ,modifier.padding(0.dp,8.dp))
         }
     }
 
@@ -99,56 +115,77 @@ fun InputArea(modifier: Modifier = Modifier){
  *
  */
 @Composable
-fun SingleButton(str:String = "1", modifier: Modifier = Modifier,viewModel:MainViewModel = viewModel()){
+fun SingleButton(pair:Pair<String, Color>,
+                 modifier: Modifier = Modifier, viewModel:MainViewModel = viewModel()){
 
     val calculating = viewModel.calculatingFlow.collectAsState()
 
     Button(onClick = {
-                     when(str){
-                         "1","2","3","4","5","6","7","8","9" -> {
-                             if (calculating.value == listOf("0")){
+         when(pair.first){
+             in numbers -> {
 
-                             }else{
+             }
+             "." -> {
 
-                             }
-                         }
-                         "+","-","×","÷" ->{
+             }
+             in operations ->{
 
-                         }
-                         "%"-> {
+             }
+             "C" ->{
 
-                         }
-                         "."-> {
+             }
+             "AC"->{
 
-                         }
-                         "0" ->{
+             }
+             "%" ->{
 
-                         }
-                         "C","AC","⊗"->{
+             }
+             "⊗" -> {
 
-                         }
+             }
+         }
 
-                     }
 
-                     }, modifier = modifier) {
-        Text(text = str, fontSize = 32.sp)
+    },shape = CircleShape,
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+        modifier = Modifier.padding(4.dp, 0.dp).then(modifier)) {
+        Text(text = pair.first, fontSize = 32.sp, color = pair.second)
     }
 }
 
+val numbers = listOf("0","1","2","3","4","5","6","7","8","9")
+val operations = listOf("+","-","×","÷")
+
 
 @Composable
-fun LineButtons(strs:Array<String>,modifier: Modifier = Modifier,viewModel: MainViewModel = viewModel()){
+fun LineButtons(pairs:List<Pair<String,Color>>,modifier: Modifier = Modifier,viewModel: MainViewModel = viewModel()){
     Row {
-        for ((index,str) in strs.withIndex()){
-            if(strs.size == 3 && index == 0){
-                SingleButton(str, modifier = modifier.weight(2.0F,true))
-            }else{
-                SingleButton(str, modifier = modifier.weight(1.0F,true))
-            }
-            if (index < strs.size - 1){
-                Spacer(modifier = Modifier.size(8.dp))
-            }
+        for ((index,pair) in pairs.withIndex()){
+            if(pairs.size == 3){
+                when (index) {
+                    0 -> {
+                        SingleButton(pair, modifier = modifier
+                            .weight(2.0F, true)
+                            .aspectRatio(2F, true))
+                    }
+                    2 -> {
+                        SingleButton(pair, modifier = modifier
+                            .weight(1.0F, true)
+                            .aspectRatio(1F, false)
+                            .background(Color.Black, CircleShape))
+                    }
+                    else -> {
+                        SingleButton(pair, modifier = modifier
+                            .weight(1.0F, false)
+                            .aspectRatio(1F))
+                    }
+                }
 
+            }else{
+                SingleButton(pair, modifier = modifier
+                    .weight(1.0F, false)
+                    .aspectRatio(1F))
+            }
         }
     }
 }
